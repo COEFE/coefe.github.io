@@ -34,22 +34,50 @@ function signup() {
 
 function submitInfo() {
     console.log("submitInfo called")
-    console.log("Current user: ", auth.currentUser);
     var name = document.getElementById("name_field").value;
     var age = document.getElementById("age_field").value;
+    var email = auth.currentUser.email;  // Get email from the current user
 
     db.collection("users").doc(auth.currentUser.uid).set({
         name: name,
-        age: age
+        age: age,
+        email: email  // Add email to the submitted information
     })
         .then(() => {
-            // Information saved, redirect to the user profile page
+            // Information saved, redirect to user profile page
             console.log("Information saved successfully");
-            console.log("Redirecting to profile.html");
             window.location.replace("profile.html");
         })
         .catch((error) => {
             console.error("Error writing document: ", error);
+        });
+}
+
+function searchUsers() {
+    var searchField = document.getElementById("search_field").value.toLowerCase();
+    var searchResult = document.getElementById("search_result");
+
+    // Clear previous search results
+    searchResult.innerHTML = "";
+
+    db.collection("users")
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                var data = doc.data();
+                // Check if the name contains the search term
+                if (data.name.toLowerCase().includes(searchField)) {
+                    // doc.data() is never undefined for query doc snapshots
+                    var li = document.createElement("li");
+                    li.innerHTML = `<strong>Name:</strong> ${data.name}<br> 
+                                    <strong>Age:</strong> ${data.age}<br> 
+                                    <strong>Email:</strong> ${data.email}`;
+                    searchResult.appendChild(li);
+                }
+            });
+        })
+        .catch((error) => {
+            console.log("Error getting documents: ", error);
         });
 }
 
@@ -61,6 +89,8 @@ function login() {
         .then((userCredential) => {
             // Signed in
             var user = userCredential.user;
+            // Store the user's email in the local storage
+            localStorage.setItem('userEmail', user.email);
             // Check if the user's information exists
             db.collection("users").doc(user.uid).get()
                 .then((doc) => {
