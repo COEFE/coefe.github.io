@@ -2,33 +2,19 @@
 <html>
 
 <head>
-    <title>Login/Registration Page</title>
+    <title>Login Page</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-gray-200">
-    <div id="login_div" class="container mx-auto max-w-md px-2 py-12 bg-white rounded shadow-xl">
+    <div id="login_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
         <h3 class="text-2xl mb-2">Login:</h3>
         <input type="email" id="email_field" placeholder="email" class="w-full px-3 py-2 mb-3 border rounded-md">
         <input type="password" id="password_field" placeholder="password"
             class="w-full px-3 py-2 mb-3 border rounded-md">
         <button onclick="login()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Login to Account</button>
-    </div>
-
-    <div id="signup_div" class="container mx-auto max-w-md px-2 py-12 bg-white rounded shadow-xl">
-        <h3 class="text-2xl mb-2">Sign Up:</h3>
-        <input type="email" id="email_field_signup" placeholder="email" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="password" id="password_field_signup" placeholder="password"
-            class="w-full px-3 py-2 mb-3 border rounded-md">
-        <button onclick="signup()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Create Account</button>
-    </div>
-
-    <div id="info_form_div" class="container mx-auto max-w-md px-2 py-12 bg-white rounded shadow-xl"
-        style="display: none;">
-        <h3 class="text-2xl mb-2">Welcome! Please fill out your information:</h3>
-        <input type="text" id="name_field" placeholder="Name" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="age_field" placeholder="Age" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <button onclick="submitInfo()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Submit</button>
+        <button onclick="window.location.href='signup.html'"
+            class="w-full px-3 py-2 mt-4 bg-green-500 text-white rounded-md">Create Account</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
