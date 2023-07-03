@@ -7,10 +7,18 @@
 </head>
 
 <body class="bg-gray-200">
-    <div id="user_div" class="container mx-auto max-w-md px-2 py-12 bg-white rounded shadow-xl">
+    <div id="user_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
         <h3 class="text-2xl mb-2">Welcome User</h3>
         <p id="user_para"></p>
         <button onclick="logout()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Logout</button>
+    </div>
+
+    <div id="search_users_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
+        <h3 class="text-2xl mb-2">Search Users:</h3>
+        <input type="text" id="search_field" placeholder="Enter user name"
+            class="w-full px-3 py-2 mb-3 border rounded-md">
+        <button onclick="searchUsers()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Search</button>
+        <ul id="search_result"></ul>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -28,7 +36,7 @@
                     .then((doc) => {
                         if (doc.exists) {
                             var data = doc.data();
-                            user_para.innerHTML = "Name: " + data.name + "<br>Age: " + data.age;
+                            user_para.innerHTML = "Name: " + data.name + "<br>Age: " + data.age + "<br>Email: " + user.email;
                         } else {
                             // doc.data() will be undefined in this case
                             console.log("No such document!");
