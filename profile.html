@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>User Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-200">
+    <div id="user_div" class="container mx-auto max-w-md px-2 py-12 bg-white rounded shadow-xl">
+        <h3 class="text-2xl mb-2">Welcome User</h3>
+        <p id="user_para"></p>
+        <button onclick="logout()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Logout</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user) {
+                // User is signed in.
+                var user_para = document.getElementById("user_para");
+
+                db.collection("users").doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            var data = doc.data();
+                            user_para.innerHTML = "Name: " + data.name + "<br>Age: " + data.age;
+                        } else {
+                            // doc.data() will be undefined in this case
+                            console.log("No such document!");
+                        }
+                    }).catch((error) => {
+                        console.log("Error getting document:", error);
+                    });
+            } else {
+                // No user is signed in.
+                window.location.replace("index.html");
+            }
+        });
+    </script>
+</body>
+
+</html>
