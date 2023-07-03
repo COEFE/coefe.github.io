@@ -31,11 +31,13 @@
             if (user) {
                 // User is signed in.
                 var user_para = document.getElementById("user_para");
+                var welcomeUser = document.querySelector("h3");
 
                 db.collection("users").doc(user.uid).get()
                     .then((doc) => {
                         if (doc.exists) {
                             var data = doc.data();
+                            welcomeUser.textContent = `Welcome ${data.name}`; // Update the welcome message
                             user_para.innerHTML = "Name: " + data.name + "<br>Age: " + data.age + "<br>Email: " + user.email;
                         } else {
                             // doc.data() will be undefined in this case
