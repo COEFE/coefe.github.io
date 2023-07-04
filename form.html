@@ -11,7 +11,34 @@
         <h3 class="text-2xl mb-2">Welcome! Please fill out your information:</h3>
         <input type="text" id="name_field" placeholder="Name" class="w-full px-3 py-2 mb-3 border rounded-md">
         <input type="text" id="age_field" placeholder="Age" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <button onclick="submitInfo()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Submit</button>
+        <input type="text" id="year_of_birth_field" placeholder="Year of Birth"
+            class="w-full px-3 py-2 mb-3 border rounded-md">
+        <textarea id="about_field" placeholder="Tell us a little about yourself"
+            class="w-full px-3 py-2 mb-3 border rounded-md"></textarea>
+        <select id="english_fluency_field" class="w-full px-3 py-2 mb-3 border rounded-md">
+            <option value="">Select English Fluency</option>
+            <option value="native">Native</option>
+            <option value="fluent">Fluent</option>
+            <option value="understandable">Understandable</option>
+            <option value="basic">Basic</option>
+        </select>
+        <input type="text" id="linkedin_field" placeholder="LinkedIn Profile"
+            class="w-full px-3 py-2 mb-3 border rounded-md">
+        <input type="text" id="facebook_field" placeholder="Facebook" class="w-full px-3 py-2 mb-3 border rounded-md">
+        <input type="text" id="golf_association_field" placeholder="Golf Association"
+            class="w-full px-3 py-2 mb-3 border rounded-md">
+        <input type="text" id="ghin_association_number_field" placeholder="GHIN/ Association Number"
+            class="w-full px-3 py-2 mb-3 border rounded-md">
+        <div id="golf_index_field" class="mb-3">
+            <select name="golf_index" class="w-full px-3 py-2 mb-3 border rounded-md">
+                <option value="">Select Golf Index</option>
+                <option value="less_than_5">Less than 5</option>
+                <option value="5-10">5-10</option>
+                <option value="greater_than_10">More than 10</option>
+            </select>
+        </div>
+        <button onclick="saveAndContinue('form')" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Save and
+            Continue</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
