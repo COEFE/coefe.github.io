@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Review Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .collapsible {
+            cursor: pointer;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .active,
+        .collapsible:hover {
+            background-color: #555;
+            color: white;
+        }
+
+        .content {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-200">
+    <div class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
+        <h3 class="text-2xl mb-2">Review Page:</h3>
+        <button type="button" class="collapsible">Personal Profile</button>
+        <div class="content">
+            <p id="personal_profile"></p>
+            <button onclick="editPersonalProfile()"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Edit Personal Profile
+            </button>
+        </div>
+        <button type="button" class="collapsible">Golfer's Profile</button>
+        <div class="content">
+            <p id="golfer_profile"></p>
+            <button onclick="editGolferProfile()"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Edit Golfer's Profile
+            </button>
+        </div>
+        <button type="button" class="collapsible">Golf Club</button>
+        <div class="content">
+            <p id="golf_club"></p>
+            <button onclick="editGolfClub()"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Edit Golf Club
+            </button>
+        </div>
+        <button onclick="submitProfile()"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">
+            Submit Profile
+        </button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        var coll = document.getElementsByClassName("collapsible");
+        var i;
+
+        for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function () {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        }
+
+        function editPersonalProfile() {
+            // Redirect to the information form
+            window.location.href = "form.html";
+        }
+
+        function editGolferProfile() {
+            // Redirect to the information form
+            window.location.href = "form.html";
+        }
+
+        function editGolfClub() {
+            // Redirect to the golf club form
+            window.location.href = "form-2.html";
+        }
+
+        function submitProfile() {
+            // Redirect to the profile page
+            window.location.href = "profile.html";
+        }
+
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user) {
+                // User is signed in.
+                var personalProfile = document.getElementById("personal_profile");
+                var golferProfile = document.getElementById("golfer_profile");
+                var golfClub = document.getElementById("golf_club");
+
+                db.collection("users").doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            var data = doc.data();
+                            personalProfile.innerHTML = "<strong>Name:</strong> " + (data.name || 'N/A') + "<br>" +
+                                "<strong>Age:</strong> " + (data.age || 'N/A') + "<br>" +
+                                "<strong>Year of Birth:</strong> " + (data.yearOfBirth || 'N/A') + "<br>" +
+                                "<strong>About:</strong> " + (data.about || 'N/A') + "<br>" +
+                                "<strong>English Fluency:</strong> " + (data.englishFluency || 'N/A') + "<br>" +
+                                "<strong>LinkedIn:</strong> " + (data.linkedin || 'N/A') + "<br>" +
+                                "<strong>Facebook:</strong> " + (data.facebook || 'N/A');
+                            golferProfile.innerHTML = "<strong>Golf Association:</strong> " + (data.golfAssociation || 'N/A') + "<br>" +
+                                "<strong>GHIN/Association Number:</strong> " + (data.ghinAssociationNumber || 'N/A') + "<br>" +
+                                "<strong>Golf Index:</strong> " + (data.golfIndex || 'N/A');
+                            golfClub.innerHTML = "<strong>Golf Club Name:</strong> " + (data.golfClub || 'N/A') + "<br>" +
+                                "<strong>Membership Privileges:</strong> " + (data.membershipPrivileges || 'N/A') + "<br>" +
+                                "<strong>Proximity:</strong> " + (data.proximity || 'N/A');
+                        } else {
+                            // doc.data() will be undefined in this case
+                            console.log("No such document!");
+                        }
+                    }).catch((error) => {
+                        console.log("Error getting document:", error);
+                    });
+            } else {
+                // No user is signed in.
+                window.location.replace("index.html");
+            }
+        });
+    </script>
+</body>
+
+</html>
