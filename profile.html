@@ -2,23 +2,19 @@
 <html>
 
 <head>
-    <title>User Profile</title>
+    <title>Profile Page</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 
 <body class="bg-gray-200">
-    <div id="user_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
-        <h3 class="text-2xl mb-2">Welcome User</h3>
-        <p id="user_para"></p>
-        <button onclick="logout()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Logout</button>
-    </div>
-
-    <div id="search_users_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
-        <h3 class="text-2xl mb-2">Search Users:</h3>
-        <input type="text" id="search_field" placeholder="Enter user name"
+    <div class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
+        <h3 class="text-2xl mb-2">Profile Page:</h3>
+        <div id="profile_info"></div>
+        <input type="text" id="search_field" placeholder="Search by name"
             class="w-full px-3 py-2 mb-3 border rounded-md">
         <button onclick="searchUsers()" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Search</button>
         <ul id="search_result"></ul>
+        <button onclick="logout()" class="w-full px-3 py-2 mt-4 bg-red-500 text-white rounded-md">Logout</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -30,15 +26,27 @@
         firebase.auth().onAuthStateChanged(function (user) {
             if (user) {
                 // User is signed in.
-                var user_para = document.getElementById("user_para");
-                var welcomeUser = document.querySelector("h3");
+                var profileInfo = document.getElementById("profile_info");
 
                 db.collection("users").doc(user.uid).get()
                     .then((doc) => {
                         if (doc.exists) {
                             var data = doc.data();
-                            welcomeUser.textContent = `Welcome ${data.name}`; // Update the welcome message
-                            user_para.innerHTML = "Name: " + data.name + "<br>Age: " + data.age + "<br>Email: " + user.email;
+                            var profileHTML = "<strong>Name:</strong> " + (data.name || 'N/A') + "<br>" +
+                                "<strong>Age:</strong> " + (data.age || 'N/A') + "<br>" +
+                                "<strong>Year of Birth:</strong> " + (data.yearOfBirth || 'N/A') + "<br>" +
+                                "<strong>About:</strong> " + (data.about || 'N/A') + "<br>" +
+                                "<strong>English Fluency:</strong> " + (data.englishFluency || 'N/A') + "<br>" +
+                                "<strong>LinkedIn:</strong> " + (data.linkedin || 'N/A') + "<br>" +
+                                "<strong>Facebook:</strong> " + (data.facebook || 'N/A') + "<br>" +
+                                "<strong>Golf Association:</strong> " + (data.golfAssociation || 'N/A') + "<br>" +
+                                "<strong>GHIN/Association Number:</strong> " + (data.ghinAssociationNumber || 'N/A') + "<br>" +
+                                "<strong>Golf Index:</strong> " + (data.golfIndex || 'N/A') + "<br>" +
+                                "<strong>Golf Club Name:</strong> " + (data.golfClub || 'N/A') + "<br>" +
+                                "<strong>Membership Privileges:</strong> " + (data.membershipPrivileges || 'N/A') + "<br>" +
+                                "<strong>Proximity:</strong> " + (data.proximity || 'N/A');
+
+                            profileInfo.innerHTML = profileHTML;
                         } else {
                             // doc.data() will be undefined in this case
                             console.log("No such document!");
@@ -51,6 +59,44 @@
                 window.location.replace("index.html");
             }
         });
+
+        function searchUsers() {
+            var searchField = document.getElementById("search_field").value.toLowerCase();
+            var searchResult = document.getElementById("search_result");
+
+            // Clear previous search results
+            searchResult.innerHTML = "";
+
+            db.collection("users")
+                .get()
+                .then((querySnapshot) => {
+                    querySnapshot.forEach((doc) => {
+                        var data = doc.data();
+                        // Check if the name contains the search term
+                        if (data.name.toLowerCase().includes(searchField)) {
+                            // doc.data() is never undefined for query doc snapshots
+                            var li = document.createElement("li");
+                            li.innerHTML = `<strong>Name:</strong> ${data.name}<br> 
+                                            <strong>Age:</strong> ${data.age}<br> 
+                                            <strong>Email:</strong> ${data.email}`;
+                            searchResult.appendChild(li);
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.log("Error getting documents: ", error);
+                });
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                // Signed out, redirect to the login page
+                window.location.href = "index.html";
+            }).catch((error) => {
+                // An error happened.
+                alert(error.message);
+            });
+        }
     </script>
 </body>
 
