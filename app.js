@@ -17,6 +17,18 @@ var db = firebase.firestore();
 function signup() {
     var email = document.getElementById("email_field_signup").value;
     var password = document.getElementById("password_field_signup").value;
+    var confirmEmail = document.getElementById("confirm_email_field_signup").value;
+    var confirmPassword = document.getElementById("confirm_password_field_signup").value;
+
+    if (email !== confirmEmail) {
+        alert("Emails do not match.");
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
 
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
@@ -33,20 +45,34 @@ function signup() {
 }
 
 function submitInfo() {
-    console.log("submitInfo called")
     var name = document.getElementById("name_field").value;
     var age = document.getElementById("age_field").value;
-    var email = auth.currentUser.email;  // Get email from the current user
+    var yearOfBirth = document.getElementById("year_of_birth_field").value;
+    var about = document.getElementById("about_field").value;
+    var englishFluency = document.getElementById("english_fluency_field").value;
+    var linkedin = document.getElementById("linkedin_field").value;
+    var facebook = document.getElementById("facebook_field").value;
+    var golfAssociation = document.getElementById("golf_association_field").value;
+    var ghinAssociationNumber = document.getElementById("ghin_association_number_field").value;
+    var golfIndex = document.querySelector('input[name="golf_index"]:checked').value;
+    var email = auth.currentUser.email;
 
     db.collection("users").doc(auth.currentUser.uid).set({
         name: name,
         age: age,
-        email: email  // Add email to the submitted information
+        yearOfBirth: yearOfBirth,
+        about: about,
+        englishFluency: englishFluency,
+        linkedin: linkedin,
+        facebook: facebook,
+        golfAssociation: golfAssociation,
+        ghinAssociationNumber: ghinAssociationNumber,
+        golfIndex: golfIndex,
+        email: email
     })
         .then(() => {
-            // Information saved, redirect to user profile page
             console.log("Information saved successfully");
-            window.location.replace("profile.html");
+            window.location.href = "profile.html"; // Redirect to the profile page
         })
         .catch((error) => {
             console.error("Error writing document: ", error);
@@ -129,4 +155,83 @@ function logout() {
         // An error happened.
         alert(error.message);
     });
+}
+function searchGolfClubs() {
+    var searchField = document.getElementById("search_club_field").value.toLowerCase();
+    var searchResult = document.getElementById("search_club_result");
+
+    // Clear previous search results
+    searchResult.innerHTML = "";
+
+    var clubs = ["Saint Andrews Golf Club -NY", "North Hills Country Club (NY)", "Cold Springs Country Club (NY)"];
+
+    clubs.forEach((club) => {
+        // Check if the club name contains the search term
+        if (club.toLowerCase().includes(searchField)) {
+            var li = document.createElement("li");
+            li.textContent = club;
+            li.onclick = function () {
+                document.getElementById("search_club_field").value = this.textContent;
+            };
+            searchResult.appendChild(li);
+        }
+    });
+}
+
+function saveAndContinue(formId) {
+    var email = auth.currentUser.email;
+    var data = { email: email };
+
+    if (formId === 'form') {
+        // Get data from form.html
+        data.name = document.getElementById("name_field").value;
+        data.age = document.getElementById("age_field").value;
+        data.yearOfBirth = document.getElementById("year_of_birth_field").value;
+        data.about = document.getElementById("about_field").value;
+        data.englishFluency = document.getElementById("english_fluency_field").value;
+        data.linkedin = document.getElementById("linkedin_field").value;
+        data.facebook = document.getElementById("facebook_field").value;
+        data.golfAssociation = document.getElementById("golf_association_field").value;
+        data.ghinAssociationNumber = document.getElementById("ghin_association_number_field").value;
+        data.golfIndex = document.getElementById("golf_index_field").value; // Fetch the value of the "Golf Index" field
+    } else if (formId === 'form-2') {
+        // Get data from form-2.html
+        data.golfClub = document.getElementById("search_club_field").value;
+        data.membershipPrivileges = document.getElementById("membership_privileges_field").value;
+        data.proximity = document.getElementById("proximity_field").value;
+    }
+
+    db.collection("users").doc(auth.currentUser.uid).set(data, { merge: true }) // Use merge: true to avoid overwriting existing data
+        .then(() => {
+            console.log("Information saved successfully");
+            if (formId === "form-2") {
+                window.location.href = "review.html"; // Redirect to the review page
+            } else {
+                // Redirect to the next form
+                var nextFormId = getNextFormId(formId);
+                if (nextFormId) {
+                    window.location.href = nextFormId + ".html";
+                } else {
+                    console.log("No next form found");
+                }
+            }
+        })
+        .catch((error) => {
+            console.error("Error writing document: ", error);
+        });
+}
+
+function getNextFormId(currentFormId) {
+    // Define the order of the forms
+    var formOrder = ["form", "form-2", "form-3"]; // Add more form IDs if needed
+
+    // Find the index of the current form ID
+    var currentIndex = formOrder.indexOf(currentFormId);
+
+    // Return the next form ID if available
+    if (currentIndex !== -1 && currentIndex < formOrder.length - 1) {
+        return formOrder[currentIndex + 1];
+    }
+
+    return null; // Return null if there is no next form
 }
