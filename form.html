@@ -4,42 +4,56 @@
 <head>
     <title>Information Form</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-200">
-    <div id="info_form_div" class="container mx-auto px-2 py-12 bg-white rounded shadow-xl max-w-lg">
-        <h3 class="text-2xl mb-2">Welcome! Please fill out your information:</h3>
-        <input type="text" id="name_field" placeholder="Name" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="age_field" placeholder="Age" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="year_of_birth_field" placeholder="Year of Birth"
-            class="w-full px-3 py-2 mb-3 border rounded-md">
-        <textarea id="about_field" placeholder="Tell us a little about yourself"
-            class="w-full px-3 py-2 mb-3 border rounded-md"></textarea>
-        <select id="english_fluency_field" class="w-full px-3 py-2 mb-3 border rounded-md">
-            <option value="">Select English Fluency</option>
-            <option value="native">Native</option>
-            <option value="fluent">Fluent</option>
-            <option value="understandable">Understandable</option>
-            <option value="basic">Basic</option>
-        </select>
-        <input type="text" id="linkedin_field" placeholder="LinkedIn Profile"
-            class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="facebook_field" placeholder="Facebook" class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="golf_association_field" placeholder="Golf Association"
-            class="w-full px-3 py-2 mb-3 border rounded-md">
-        <input type="text" id="ghin_association_number_field" placeholder="GHIN/ Association Number"
-            class="w-full px-3 py-2 mb-3 border rounded-md">
-        <div id="golf_index_field" class="mb-3">
-            <select name="golf_index" class="w-full px-3 py-2 mb-3 border rounded-md">
-                <option value="">Select Golf Index</option>
-                <option value="less_than_5">Less than 5</option>
-                <option value="5-10">5-10</option>
-                <option value="greater_than_10">More than 10</option>
+<body class="bg-gray-100">
+    <section id="info_form_section" class="relative py-16 bg-cover bg-center"
+        style="background-image: url('https://images.unsplash.com/photo-1538648759472-7251f7cb2c2f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3174&q=80'); background-size: cover; background-position: center;">
+        <div class="bg-black bg-opacity-50 absolute inset-0"></div>
+        <div id="info_form_div" class="container mx-auto px-4 py-12 bg-white rounded shadow-xl max-w-lg relative">
+            <h3 class="text-2xl mb-2">Welcome! Please fill out your information:</h3>
+            <input type="text" id="name_field" placeholder="Name"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="year_of_birth_field" placeholder="Year of Birth"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <textarea id="about_field" placeholder="Tell us a little about yourself"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <select id="english_fluency_field"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select English Fluency</option>
+                <option value="native">Native</option>
+                <option value="fluent">Fluent</option>
+                <option value="understandable">Understandable</option>
+                <option value="basic">Basic</option>
             </select>
+            <input type="text" id="linkedin_field" placeholder="LinkedIn Profile"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="facebook_field" placeholder="Facebook"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="golf_association_field" placeholder="Golf Association"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="ghin_association_number_field" placeholder="GHIN/ Association Number"
+                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="mb-3">
+                <select id="golf_index_field" name="golf_index"
+                    class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select Golf Index</option>
+                    <option value="less_than_5">Less than 5</option>
+                    <option value="5-10">5-10</option>
+                    <option value="greater_than_10">More than 10</option>
+                </select>
+            </div>
+            <button onclick="saveAndContinue('form')"
+                class="w-full px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Save
+                and
+                Continue</button>
         </div>
-        <button onclick="saveAndContinue('form')" class="w-full px-3 py-2 bg-blue-500 text-white rounded-md">Save and
-            Continue</button>
-    </div>
+    </section>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
