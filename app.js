@@ -185,7 +185,7 @@ function saveAndContinue(formId) {
     if (formId === 'form') {
         // Get data from form.html
         data.name = document.getElementById("name_field").value;
-        data.age = document.getElementById("age_field").value;
+        // data.age = document.getElementById("age_field").value; // This line is commented out
         data.yearOfBirth = document.getElementById("year_of_birth_field").value;
         data.about = document.getElementById("about_field").value;
         data.englishFluency = document.getElementById("english_fluency_field").value;
@@ -200,6 +200,7 @@ function saveAndContinue(formId) {
         data.membershipPrivileges = document.getElementById("membership_privileges_field").value;
         data.proximity = document.getElementById("proximity_field").value;
     }
+
 
     db.collection("users").doc(auth.currentUser.uid).set(data, { merge: true }) // Use merge: true to avoid overwriting existing data
         .then(() => {
