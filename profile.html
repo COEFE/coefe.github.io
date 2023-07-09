@@ -4,111 +4,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Page</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Login | GolfBelly</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        html {
-            scroll-behavior: smooth;
+        body {
+            background-image: url('https://images.unsplash.com/photo-1538648759472-7251f7cb2c2f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3174&q=80');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .login-container {
+            background-color: rgba(255, 255, 255, 0.8);
         }
     </style>
 </head>
 
-<body class="bg-gray-100">
-    <section id="profile_section" class="relative py-16 bg-cover bg-center"
-        style="background-image: url('https://images.unsplash.com/photo-1538648759472-7251f7cb2c2f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3174&q=80'); background-size: cover; background-position: center;">
-        <div class="bg-black bg-opacity-50 absolute inset-0"></div>
-        <div id="profile_div" class="container mx-auto px-6 py-12 bg-white rounded shadow-xl max-w-lg relative">
-            <h3 class="text-2xl mb-4 font-semibold">Profile Page:</h3>
-            <div id="profile_info" class="mb-4"></div>
-            <input type="text" id="search_field" placeholder="Search by name"
-                class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="searchUsers()"
-                class="w-full px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Search</button>
-            <ul id="search_result" class="list-disc pl-5 mt-4"></ul>
-            <button onclick="logout()"
-                class="w-full px-3 py-2 mt-4 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">Logout</button>
-        </div>
-    </section>
-
+<body>
+    <div class="container mx-auto max-w-md px-6 py-20 login-container rounded shadow-lg">
+        <h2 class="text-3xl font-bold text-center mb-6">Login to GolfBelly</h2>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input type="email" id="email" name="email" placeholder="Your Email"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" id="password" name="password" placeholder="Your Password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="text-center">
+                <button type="submit"
+                    class="bg-blue-500 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Login</button>
+            </div>
+        </form>
+    </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="app.js"></script>
-    <script>
-        firebase.auth().onAuthStateChanged(function (user) {
-            if (user) {
-                // User is signed in.
-                var profileInfo = document.getElementById("profile_info");
-
-                db.collection("users").doc(user.uid).get()
-                    .then((doc) => {
-                        if (doc.exists) {
-                            var data = doc.data();
-                            var profileHTML = "<strong>Name:</strong> " + (data.name || 'N/A') + "<br>" +
-                                "<strong>Year of Birth:</strong> " + (data.yearOfBirth || 'N/A') + "<br>" +
-                                "<strong>About:</strong> " + (data.about || 'N/A') + "<br>" +
-                                "<strong>English Fluency:</strong> " + (data.englishFluency || 'N/A') + "<br>" +
-                                "<strong>LinkedIn:</strong> " + (data.linkedin || 'N/A') + "<br>" +
-                                "<strong>Facebook:</strong> " + (data.facebook || 'N/A') + "<br>" +
-                                "<strong>Golf Association:</strong> " + (data.golfAssociation || 'N/A') + "<br>" +
-                                "<strong>GHIN/Association Number:</strong> " + (data.ghinAssociationNumber || 'N/A') + "<br>" +
-                                "<strong>Golf Index:</strong> " + (data.golfIndex || 'N/A') + "<br>" +
-                                "<strong>Golf Club Name:</strong> " + (data.golfClub || 'N/A') + "<br>" +
-                                "<strong>Membership Privileges:</strong> " + (data.membershipPrivileges || 'N/A') + "<br>" +
-                                "<strong>Proximity:</strong> " + (data.proximity || 'N/A');
-
-                            profileInfo.innerHTML = profileHTML;
-                        } else {
-                            // doc.data() will be undefined in this case
-                            console.log("No such document!");
-                        }
-                    }).catch((error) => {
-                        console.log("Error getting document:", error);
-                    });
-            } else {
-                // No user is signed in.
-                window.location.replace("index.html");
-            }
-        });
-
-        function searchUsers() {
-            var searchField = document.getElementById("search_field").value.toLowerCase();
-            var searchResult = document.getElementById("search_result");
-
-            // Clear previous search results
-            searchResult.innerHTML = "";
-
-            db.collection("users")
-                .get()
-                .then((querySnapshot) => {
-                    querySnapshot.forEach((doc) => {
-                        var data = doc.data();
-                        // Check if the name contains the search term
-                        if (data.name.toLowerCase().includes(searchField)) {
-                            // doc.data() is never undefined for query doc snapshots
-                            var li = document.createElement("li");
-                            li.innerHTML = `<strong>Name:</strong> ${data.name}<br> 
-                                            <strong>Email:</strong> ${data.email}`;
-                            searchResult.appendChild(li);
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.log("Error getting documents: ", error);
-                });
-        }
-
-        function logout() {
-            auth.signOut().then(() => {
-                // Signed out, redirect to the login page
-                window.location.href = "index.html";
-            }).catch((error) => {
-                // An error happened.
-                alert(error.message);
-            });
-        }
-    </script>
 </body>
 
 </html>
