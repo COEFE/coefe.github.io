@@ -108,8 +108,8 @@ function searchUsers() {
 }
 
 function login() {
-    var email = document.getElementById("email_field").value;
-    var password = document.getElementById("password_field").value;
+    var email = document.getElementById("email").value;
+    var password = document.getElementById("password").value;
 
     auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
@@ -236,3 +236,100 @@ function getNextFormId(currentFormId) {
 
     return null; // Return null if there is no next form
 }
+
+function clearSearch() {
+    var searchField = document.getElementById("search_field");
+    var searchResult = document.getElementById("search_result");
+
+    // Clear the search field and the search results
+    searchField.value = "";
+    searchResult.innerHTML = "";
+}
+
+function sortResults() {
+    var sortField = document.getElementById("sort").value;
+    var searchResult = document.getElementById("search_result");
+
+    // Get the search results
+    var results = Array.from(searchResult.children);
+
+    // Sort the results based on the selected field
+    results.sort((a, b) => {
+        var aValue = a.querySelector(`strong:contains(${sortField}):`).nextSibling.nodeValue.trim();
+        var bValue = b.querySelector(`strong:contains(${sortField}):`).nextSibling.nodeValue.trim();
+
+        if (aValue < bValue) {
+            return -1;
+        } else if (aValue > bValue) {
+            return 1;
+        } else {
+            return 0;
+        }
+    });
+
+    // Clear the search results
+    searchResult.innerHTML = "";
+
+    // Append the sorted results
+    results.forEach((result) => {
+        searchResult.appendChild(result);
+    });
+}
+
+function filterResults() {
+    var filterField = document.getElementById("filter").value;
+    var searchResult = document.getElementById("search_result");
+
+    // Get the search results
+    var results = Array.from(searchResult.children);
+
+    // Filter the results based on the selected field
+    results = results.filter((result) => {
+        var value = result.querySelector(`strong:contains(${filterField}):`).nextSibling.nodeValue.trim();
+        return value !== 'N/A'; // Change this condition based on your requirements
+    });
+
+    // Clear the search results
+    searchResult.innerHTML = "";
+
+    // Append the filtered results
+    results.forEach((result) => {
+        searchResult.appendChild(result);
+    });
+}
+
+function searchUsers() {
+    var searchField = document.getElementById("search_field").value.toLowerCase();
+    var searchResult = document.getElementById("search_result");
+
+    // Clear previous search results
+    searchResult.innerHTML = "";
+
+    db.collection("users")
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                var data = doc.data();
+                // Check if any field contains the search term
+                for (var key in data) {
+                    if (data[key].toLowerCase().includes(searchField)) {
+                        // doc.data() is never undefined for query doc snapshots
+                        var li = document.createElement("li");
+                        li.innerHTML = `<strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${data[key]}`;
+                        searchResult.appendChild(li);
+                        break; // Break the loop as soon as a match is found
+                    }
+                }
+            });
+        })
+        .catch((error) => {
+            console.log("Error getting documents: ", error);
+        });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("loginForm").addEventListener("submit", function (event) {
+        event.preventDefault(); // Prevent the form from being submitted normally
+        login();
+    });
+});
