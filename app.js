@@ -14,6 +14,13 @@ var app = firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 var db = firebase.firestore();
 
+auth.onAuthStateChanged((user) => {
+    if (!user && !window.location.href.endsWith('login.html')) {
+        // User is not signed in and the current page is not the login page, redirect to the login page
+        window.location.href = "login.html";
+    }
+});
+
 function signup() {
     var email = document.getElementById("email_field_signup").value;
     var password = document.getElementById("password_field_signup").value;
@@ -41,69 +48,6 @@ function signup() {
             var errorCode = error.code;
             var errorMessage = error.message;
             alert(errorMessage);
-        });
-}
-
-function submitInfo() {
-    var name = document.getElementById("name_field").value;
-    var age = document.getElementById("age_field").value;
-    var yearOfBirth = document.getElementById("year_of_birth_field").value;
-    var about = document.getElementById("about_field").value;
-    var englishFluency = document.getElementById("english_fluency_field").value;
-    var linkedin = document.getElementById("linkedin_field").value;
-    var facebook = document.getElementById("facebook_field").value;
-    var golfAssociation = document.getElementById("golf_association_field").value;
-    var ghinAssociationNumber = document.getElementById("ghin_association_number_field").value;
-    var golfIndex = document.querySelector('input[name="golf_index"]:checked').value;
-    var email = auth.currentUser.email;
-
-    db.collection("users").doc(auth.currentUser.uid).set({
-        name: name,
-        age: age,
-        yearOfBirth: yearOfBirth,
-        about: about,
-        englishFluency: englishFluency,
-        linkedin: linkedin,
-        facebook: facebook,
-        golfAssociation: golfAssociation,
-        ghinAssociationNumber: ghinAssociationNumber,
-        golfIndex: golfIndex,
-        email: email
-    })
-        .then(() => {
-            console.log("Information saved successfully");
-            window.location.href = "profile.html"; // Redirect to the profile page
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-        });
-}
-
-function searchUsers() {
-    var searchField = document.getElementById("search_field").value.toLowerCase();
-    var searchResult = document.getElementById("search_result");
-
-    // Clear previous search results
-    searchResult.innerHTML = "";
-
-    db.collection("users")
-        .get()
-        .then((querySnapshot) => {
-            querySnapshot.forEach((doc) => {
-                var data = doc.data();
-                // Check if the name contains the search term
-                if (data.name.toLowerCase().includes(searchField)) {
-                    // doc.data() is never undefined for query doc snapshots
-                    var li = document.createElement("li");
-                    li.innerHTML = `<strong>Name:</strong> ${data.name}<br> 
-                                    <strong>Age:</strong> ${data.age}<br> 
-                                    <strong>Email:</strong> ${data.email}`;
-                    searchResult.appendChild(li);
-                }
-            });
-        })
-        .catch((error) => {
-            console.log("Error getting documents: ", error);
         });
 }
 
@@ -156,180 +100,438 @@ function logout() {
         alert(error.message);
     });
 }
-function searchGolfClubs() {
-    var searchField = document.getElementById("search_club_field").value.toLowerCase();
-    var searchResult = document.getElementById("search_club_result");
 
-    // Clear previous search results
-    searchResult.innerHTML = "";
+function createGolfEvent() {
+    var golfClub = document.getElementById("golf_club_field").value;
+    var people = document.getElementById("people_field").value;
+    var dateTime = document.getElementById("date_time_field").value;
 
-    var clubs = ["Saint Andrews Golf Club -NY", "North Hills Country Club (NY)", "Cold Springs Country Club (NY)"];
-
-    clubs.forEach((club) => {
-        // Check if the club name contains the search term
-        if (club.toLowerCase().includes(searchField)) {
-            var li = document.createElement("li");
-            li.textContent = club;
-            li.onclick = function () {
-                document.getElementById("search_club_field").value = this.textContent;
-            };
-            searchResult.appendChild(li);
-        }
-    });
+    db.collection("events").add({
+        golfClub: golfClub,
+        people: people,
+        dateTime: dateTime,
+        userId: auth.currentUser.uid,
+        userName: currentUserData.name, // Include the user's name
+        status: "open" // The status is "open" when the event is created
+    })
+        .then((docRef) => {
+            console.log("Event created with ID: ", docRef.id);
+            window.location.href = "profile.html"; // Redirect to the profile page
+        })
+        .catch((error) => {
+            console.error("Error adding document: ", error);
+        });
 }
+
+function loadEvents() {
+    var searchResult = document.getElementById("search_result");
+    var pendingReview = document.getElementById("pending_review");
+    var approved = document.getElementById("approved");
+
+    // Check if the search_result element exists
+    if (searchResult && pendingReview && approved) {
+        // Clear the previous events
+        searchResult.innerHTML = "";
+        pendingReview.innerHTML = "";
+        approved.innerHTML = "";
+
+        db.collection("events")
+            .get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data();
+                    var li = document.createElement("li");
+                    li.setAttribute("data-id", doc.id); // Assign the document ID to the li element
+
+                    var golfClub = document.createElement("span");
+                    golfClub.textContent = `Golf Club: ${data.golfClub}`;
+                    li.appendChild(golfClub);
+                    li.appendChild(document.createElement("br"));
+
+                    var people = document.createElement("span");
+                    people.textContent = `People: ${data.people}`;
+                    li.appendChild(people);
+                    li.appendChild(document.createElement("br"));
+
+                    // Remove this line to not show the date and time
+                    // var dateTime = document.createElement("span");
+                    // dateTime.textContent = `Date and Time: ${data.dateTime}`;
+                    // li.appendChild(dateTime);
+
+                    // Add this line to show the creator of the event
+                    var creator = document.createElement("span");
+                    creator.textContent = `Creator: ${data.userName}`;
+                    li.appendChild(creator);
+
+                    li.style.marginBottom = "10px"; // Add some space between the events
+
+                    // Only add the delete button if the current user is the creator of the event
+                    if (data.userId === auth.currentUser.uid) {
+                        var deleteButton = document.createElement("button");
+                        deleteButton.textContent = "Delete";
+                        deleteButton.classList.add("button-delete");
+                        deleteButton.onclick = function () {
+                            db.collection("events").doc(doc.id).delete().then(() => {
+                                console.log("Event successfully deleted!");
+                                li.remove(); // Remove the event from the list
+                            }).catch((error) => {
+                                console.error("Error removing document: ", error);
+                            });
+                        };
+                        li.appendChild(deleteButton);
+                    } else {
+                        // The current user is not the creator of the event, add the signup button
+                        var signupButton = document.createElement("button");
+                        signupButton.textContent = "Sign Up";
+                        signupButton.classList.add("button-signup");
+                        signupButton.onclick = function () {
+                            signupForEvent(doc.id);
+                        };
+                        li.appendChild(signupButton);
+                    }
+
+                    // Add the event to the appropriate section based on its status
+                    if (data.status === "open") {
+                        searchResult.appendChild(li);
+                    } else if (data.status === "pending") {
+                        pendingReview.appendChild(li);
+                    } else if (data.status === "approved") {
+                        approved.appendChild(li);
+                    }
+                });
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+    }
+}
+
 
 function saveAndContinue(formId) {
-    var email = auth.currentUser.email;
-    var data = { email: email };
-
-    if (formId === 'form') {
-        // Get data from form.html
-        data.name = document.getElementById("name_field").value;
-        // data.age = document.getElementById("age_field").value; // This line is commented out
-        data.yearOfBirth = document.getElementById("year_of_birth_field").value;
-        data.about = document.getElementById("about_field").value;
-        data.englishFluency = document.getElementById("english_fluency_field").value;
-        data.linkedin = document.getElementById("linkedin_field").value;
-        data.facebook = document.getElementById("facebook_field").value;
-        data.golfAssociation = document.getElementById("golf_association_field").value;
-        data.ghinAssociationNumber = document.getElementById("ghin_association_number_field").value;
-        data.golfIndex = document.getElementById("golf_index_field").value; // Fetch the value of the "Golf Index" field
-    } else if (formId === 'form-2') {
-        // Get data from form-2.html
-        data.golfClub = document.getElementById("search_club_field").value;
-        data.membershipPrivileges = document.getElementById("membership_privileges_field").value;
-        data.proximity = document.getElementById("proximity_field").value;
-    }
-
-
-    db.collection("users").doc(auth.currentUser.uid).set(data, { merge: true }) // Use merge: true to avoid overwriting existing data
-        .then(() => {
-            console.log("Information saved successfully");
-            if (formId === "form-2") {
-                window.location.href = "review.html"; // Redirect to the review page
-            } else {
-                // Redirect to the next form
-                var nextFormId = getNextFormId(formId);
-                if (nextFormId) {
-                    window.location.href = nextFormId + ".html";
-                } else {
-                    console.log("No next form found");
-                }
-            }
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-        });
-}
-
-function getNextFormId(currentFormId) {
-    // Define the order of the forms
-    var formOrder = ["form", "form-2", "form-3"]; // Add more form IDs if needed
-
-    // Find the index of the current form ID
-    var currentIndex = formOrder.indexOf(currentFormId);
-
-    // Return the next form ID if available
-    if (currentIndex !== -1 && currentIndex < formOrder.length - 1) {
-        return formOrder[currentIndex + 1];
-    }
-
-    return null; // Return null if there is no next form
-}
-
-function clearSearch() {
-    var searchField = document.getElementById("search_field");
-    var searchResult = document.getElementById("search_result");
-
-    // Clear the search field and the search results
-    searchField.value = "";
-    searchResult.innerHTML = "";
-}
-
-function sortResults() {
-    var sortField = document.getElementById("sort").value;
-    var searchResult = document.getElementById("search_result");
-
-    // Get the search results
-    var results = Array.from(searchResult.children);
-
-    // Sort the results based on the selected field
-    results.sort((a, b) => {
-        var aValue = a.querySelector(`strong:contains(${sortField}):`).nextSibling.nodeValue.trim();
-        var bValue = b.querySelector(`strong:contains(${sortField}):`).nextSibling.nodeValue.trim();
-
-        if (aValue < bValue) {
-            return -1;
-        } else if (aValue > bValue) {
-            return 1;
-        } else {
-            return 0;
-        }
-    });
-
-    // Clear the search results
-    searchResult.innerHTML = "";
-
-    // Append the sorted results
-    results.forEach((result) => {
-        searchResult.appendChild(result);
-    });
-}
-
-function filterResults() {
-    var filterField = document.getElementById("filter").value;
-    var searchResult = document.getElementById("search_result");
-
-    // Get the search results
-    var results = Array.from(searchResult.children);
-
-    // Filter the results based on the selected field
-    results = results.filter((result) => {
-        var value = result.querySelector(`strong:contains(${filterField}):`).nextSibling.nodeValue.trim();
-        return value !== 'N/A'; // Change this condition based on your requirements
-    });
-
-    // Clear the search results
-    searchResult.innerHTML = "";
-
-    // Append the filtered results
-    results.forEach((result) => {
-        searchResult.appendChild(result);
-    });
-}
-
-function searchUsers() {
-    var searchField = document.getElementById("search_field").value.toLowerCase();
-    var searchResult = document.getElementById("search_result");
-
-    // Clear previous search results
-    searchResult.innerHTML = "";
-
-    db.collection("users")
-        .get()
-        .then((querySnapshot) => {
-            querySnapshot.forEach((doc) => {
-                var data = doc.data();
-                // Check if any field contains the search term
-                for (var key in data) {
-                    if (data[key].toLowerCase().includes(searchField)) {
-                        // doc.data() is never undefined for query doc snapshots
-                        var li = document.createElement("li");
-                        li.innerHTML = `<strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${data[key]}`;
-                        searchResult.appendChild(li);
-                        break; // Break the loop as soon as a match is found
-                    }
-                }
+    var form = document.getElementById(formId);
+    if (form) {
+        var name = document.getElementById("name_field").value;
+        var user = auth.currentUser;
+        if (user) {
+            user.updateProfile({
+                displayName: name
+            }).then(() => {
+                console.log("Display name set to: " + user.displayName);
+                // Save the name in Firestore
+                db.collection("users").doc(user.uid).set({
+                    name: name
+                    // Add here other fields from the form
+                }).then(() => {
+                    console.log("User data saved in Firestore.");
+                }).catch((error) => {
+                    console.error("Error saving user data in Firestore: ", error);
+                });
+            }).catch((error) => {
+                console.error("Error setting display name: ", error);
             });
+        }
+    }
+}
+
+function signupForEvent(eventId) {
+    db.collection("signups").add({
+        eventId: eventId,
+        userId: auth.currentUser.uid,
+        status: "pending"
+    })
+        .then((docRef) => {
+            console.log("User signed up for event with ID: ", docRef.id);
+            // You can add code here to update the UI or navigate to a different page
         })
         .catch((error) => {
-            console.log("Error getting documents: ", error);
+            console.error("Error signing up for event: ", error);
         });
 }
+function loadSignups() {
+    var pendingReview = document.getElementById("pending_review");
+
+    // Check if the pending_review element exists
+    if (pendingReview) {
+        // Clear the previous signups
+        pendingReview.innerHTML = "";
+
+        db.collection("signups")
+            .where("userId", "==", auth.currentUser.uid)
+            .where("status", "==", "pending")
+            .get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data();
+
+                    // Fetch the event document
+                    db.collection("events").doc(data.eventId).get()
+                        .then((eventDoc) => {
+                            if (eventDoc.exists) {
+                                var eventData = eventDoc.data();
+                                var li = document.createElement("li");
+                                li.setAttribute("data-id", doc.id); // Assign the document ID to the li element
+
+                                var eventName = document.createElement("span");
+                                eventName.textContent = `Event Name: ${eventData.golfClub}`; // Use the event name here
+                                li.appendChild(eventName);
+                                li.appendChild(document.createElement("br"));
+
+                                var status = document.createElement("span");
+                                status.textContent = `Status: ${data.status}`;
+                                li.appendChild(status);
+
+                                li.style.marginBottom = "10px"; // Add some space between the signups
+
+                                pendingReview.appendChild(li);
+                            } else {
+                                console.log(`No such document! Document ID: ${data.eventId}`);
+                            }
+                        })
+                        .catch((error) => {
+                            console.log("Error getting document:", error);
+                        });
+                });
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+    }
+}
+function signupForEvent(eventId) {
+    db.collection("events").doc(eventId).get()
+        .then((doc) => {
+            var eventUserId = doc.data().userId;
+            db.collection("signups").add({
+                eventId: eventId,
+                eventUserId: eventUserId, // The ID of the user who created the event
+                userId: auth.currentUser.uid, // The ID of the user who is signing up
+                userEmail: auth.currentUser.email, // The email of the user who is signing up
+                userName: auth.currentUser.displayName, // The name of the user who is signing up
+                status: "pending"
+            })
+                .then((docRef) => {
+                    console.log("User signed up for event with ID: ", docRef.id);
+                    loadSignups(); // Reload the signups after a new signup is created
+                })
+                .catch((error) => {
+                    console.error("Error signing up for event: ", error);
+                });
+        })
+        .catch((error) => {
+            console.error("Error getting event: ", error);
+        });
+}
+
+
+
+function loadSignupsForReview() {
+    var reviewSignups = document.getElementById("review_signups");
+    var approved = document.getElementById("approved");
+
+    // Check if the review_signups element exists
+    if (reviewSignups && approved) {
+        // Clear the previous signups
+        reviewSignups.innerHTML = "";
+        approved.innerHTML = "";
+
+        db.collection("signups")
+            .get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data();
+
+                    // Fetch the event document
+                    db.collection("events").doc(data.eventId).get()
+                        .then((eventDoc) => {
+                            if (eventDoc.exists) {
+                                var eventData = eventDoc.data();
+
+                                // Only show the signup if the current user is the creator of the event
+                                if (eventData.userId === auth.currentUser.uid) {
+                                    var li = document.createElement("li");
+                                    li.setAttribute("data-id", doc.id); // Assign the document ID to the li element
+
+                                    var eventName = document.createElement("span");
+                                    eventName.textContent = `Event Name: ${eventData.golfClub}`; // Use the event name here
+                                    li.appendChild(eventName);
+                                    li.appendChild(document.createElement("br"));
+
+                                    var userName = document.createElement("span");
+                                    userName.textContent = `User Name: ${data.userName}`; // Use the user's name here
+                                    li.appendChild(userName);
+                                    li.appendChild(document.createElement("br"));
+
+                                    var userEmail = document.createElement("span");
+                                    userEmail.textContent = `User Email: ${data.userEmail}`; // Use the user's email here
+                                    li.appendChild(userEmail);
+                                    li.appendChild(document.createElement("br"));
+
+                                    var status = document.createElement("span");
+                                    status.textContent = `Status: ${data.status}`;
+                                    li.appendChild(status);
+
+                                    if (data.status === "pending") {
+                                        var approveButton = document.createElement("button");
+                                        approveButton.textContent = "Approve";
+                                        approveButton.onclick = function () {
+                                            approveSignup(doc.id);
+                                        };
+                                        li.appendChild(approveButton);
+
+                                        var rejectButton = document.createElement("button");
+                                        rejectButton.textContent = "Reject";
+                                        rejectButton.onclick = function () {
+                                            rejectSignup(doc.id);
+                                        };
+                                        li.appendChild(rejectButton);
+
+                                        li.style.marginBottom = "10px"; // Add some space between the signups
+                                        reviewSignups.appendChild(li);
+                                    } else if (data.status === "approved") {
+                                        li.style.marginBottom = "10px"; // Add some space between the signups
+                                        approved.appendChild(li);
+                                    }
+                                }
+                            } else {
+                                console.log("No such document!");
+                            }
+                        })
+                        .catch((error) => {
+                            console.log("Error getting document:", error);
+                        });
+                });
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+    }
+}
+
+
+
+function approveSignup(signupId) {
+    db.collection("signups").doc(signupId).update({
+        status: "approved"
+    })
+        .then(() => {
+            console.log("Signup approved with ID: ", signupId);
+            loadSignupsForReview();
+            loadUpcomingEvents();
+        })
+        .catch((error) => {
+            console.error("Error approving signup: ", error);
+        });
+}
+
+
+
+function rejectSignup(signupId) {
+    db.collection("signups").doc(signupId).update({
+        status: "rejected"
+    })
+        .then(() => {
+            console.log("Signup rejected with ID: ", signupId);
+            loadSignupsForReview(); // Reload the signups for review after a signup is rejected
+        })
+        .catch((error) => {
+            console.error("Error rejecting signup: ", error);
+        });
+}
+function loadUpcomingEvents() {
+    var upcomingEvents = document.getElementById("upcoming_events");
+
+    // Check if the upcoming_events element exists
+    if (upcomingEvents) {
+        // Clear the previous events
+        upcomingEvents.innerHTML = "";
+
+        db.collection("signups")
+            .where("userId", "==", auth.currentUser.uid)
+            .where("status", "==", "approved") // Only get signups that are approved
+            .get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data();
+
+                    // Fetch the event document
+                    db.collection("events").doc(data.eventId).get()
+                        .then((eventDoc) => {
+                            if (eventDoc.exists) {
+                                var eventData = eventDoc.data();
+                                var a = document.createElement("a");
+                                a.setAttribute("data-id", doc.id); // Assign the document ID to the a element
+                                a.href = `event-details.html?eventId=${data.eventId}`; // Set the href to link to the event details page
+
+                                var eventName = document.createElement("span");
+                                eventName.textContent = `Event Name: ${eventData.golfClub}`; // Use the event name here
+                                a.appendChild(eventName);
+                                a.appendChild(document.createElement("br"));
+
+                                var status = document.createElement("span");
+                                status.textContent = `Status: ${data.status}`;
+                                a.appendChild(status);
+
+                                a.style.marginBottom = "10px"; // Add some space between the signups
+
+                                upcomingEvents.appendChild(a);
+                            } else {
+                                console.log(`No such document! Document ID: ${data.eventId}`);
+                            }
+                        })
+                        .catch((error) => {
+                            console.log("Error getting document:", error);
+                        });
+                });
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+    }
+}
+
+let currentUserData = null; // Add this line at the top of your script
+
+
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // User is signed in
+        db.collection("users").doc(user.uid).get()
+            .then((doc) => {
+                if (doc.exists) {
+                    currentUserData = doc.data(); // Store the user's data in the global variable
+                    var profileInfo = document.getElementById("profile_info");
+                    if (profileInfo) {
+                        profileInfo.innerHTML = `Name: ${currentUserData.name}<br>Email: ${user.email}`;
+                    }
+                } else {
+                    console.log("No such document!");
+                }
+            })
+            .catch((error) => {
+                console.log("Error getting document:", error);
+            });
+
+        // Call all the necessary functions here
+        loadEvents();
+        loadSignups(); // Load the signups when the user signs in
+        loadSignupsForReview(); // Load the signups for review when the user signs in
+        loadUpcomingEvents(); // Load the upcoming events when the user signs in
+    } else {
+        // User is signed out
+        // ...
+    }
+});
+
 
 document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("loginForm").addEventListener("submit", function (event) {
-        event.preventDefault(); // Prevent the form from being submitted normally
-        login();
-    });
+    var loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", function (event) {
+            event.preventDefault(); // Prevent the form from being submitted normally
+            login();
+        });
+    }
 });
+
+
+
