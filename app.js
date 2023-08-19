@@ -14,6 +14,13 @@ var app = firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 var db = firebase.firestore();
 
+var eventsRef = db.collection("events");
+var first = eventsRef.orderBy("golfClub").limit(10);
+var isFirstPage = true; // Start on the first page
+
+
+var firstDocOfCurrentPage = null; // Declare the variable here
+
 auth.onAuthStateChanged((user) => {
     if (!user && !window.location.href.endsWith('login.html')) {
         // User is not signed in and the current page is not the login page, redirect to the login page
@@ -106,121 +113,167 @@ function createGolfEvent() {
     var people = document.getElementById("people_field").value;
     var dateTime = document.getElementById("date_time_field").value;
 
-    db.collection("events").add({
-        golfClub: golfClub,
-        people: people,
-        dateTime: dateTime,
-        userId: auth.currentUser.uid,
-        userName: currentUserData.name, // Include the user's name
-        status: "open" // The status is "open" when the event is created
-    })
-        .then((docRef) => {
-            console.log("Event created with ID: ", docRef.id);
-            window.location.href = "profile.html"; // Redirect to the profile page
+    // Fetch the user's data from Firestore
+    db.collection("users").doc(auth.currentUser.uid).get()
+        .then((doc) => {
+            if (doc.exists) {
+                var userData = doc.data();
+
+                db.collection("events").add({
+                    golfClub: golfClub,
+                    people: people,
+                    dateTime: dateTime,
+                    userId: auth.currentUser.uid,
+                    userName: userData.name, // Use the user's name from Firestore
+                    status: "open", // The status is "open" when the event is created
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Add a timestamp here
+                })
+                    .then((docRef) => {
+                        console.log("Event created with ID: ", docRef.id);
+                        window.location.href = "profile.html"; // Redirect to the profile page
+                    })
+                    .catch((error) => {
+                        console.error("Error adding document: ", error);
+                    });
+            } else {
+                console.log("No such document!");
+            }
         })
         .catch((error) => {
-            console.error("Error adding document: ", error);
+            console.log("Error getting document:", error);
         });
 }
 
-function loadEvents() {
-    var searchResult = document.getElementById("search_result");
-    var pendingReview = document.getElementById("pending_review");
-    var approved = document.getElementById("approved");
 
-    // Check if the search_result element exists
-    if (searchResult && pendingReview && approved) {
-        // Clear the previous events
-        searchResult.innerHTML = "";
-        pendingReview.innerHTML = "";
-        approved.innerHTML = "";
+var eventsRef = db.collection("events");
+var pageSize = 3;
+var currentPage = null;
 
-        db.collection("events")
-            .get()
-            .then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    var data = doc.data();
-                    var li = document.createElement("li");
-                    li.setAttribute("data-id", doc.id); // Assign the document ID to the li element
-
-                    var golfClub = document.createElement("span");
-                    golfClub.textContent = `Golf Club: ${data.golfClub}`;
-                    li.appendChild(golfClub);
-                    li.appendChild(document.createElement("br"));
-
-                    var people = document.createElement("span");
-                    people.textContent = `People: ${data.people}`;
-                    li.appendChild(people);
-                    li.appendChild(document.createElement("br"));
-
-                    // Remove this line to not show the date and time
-                    // var dateTime = document.createElement("span");
-                    // dateTime.textContent = `Date and Time: ${data.dateTime}`;
-                    // li.appendChild(dateTime);
-
-                    // Add this line to show the creator of the event
-                    var creator = document.createElement("span");
-                    creator.textContent = `Creator: ${data.userName}`;
-                    li.appendChild(creator);
-
-                    li.style.marginBottom = "10px"; // Add some space between the events
-
-                    // Only add the delete button if the current user is the creator of the event
-                    if (data.userId === auth.currentUser.uid) {
-                        var deleteButton = document.createElement("button");
-                        deleteButton.textContent = "Delete";
-                        deleteButton.classList.add("button-delete");
-                        deleteButton.onclick = function () {
-                            db.collection("events").doc(doc.id).delete().then(() => {
-                                console.log("Event successfully deleted!");
-                                li.remove(); // Remove the event from the list
-                            }).catch((error) => {
-                                console.error("Error removing document: ", error);
-                            });
-                        };
-                        li.appendChild(deleteButton);
-                    } else {
-                        // The current user is not the creator of the event, add the signup button
-                        var signupButton = document.createElement("button");
-                        signupButton.textContent = "Sign Up";
-                        signupButton.classList.add("button-signup");
-                        signupButton.onclick = function () {
-                            signupForEvent(doc.id);
-                        };
-                        li.appendChild(signupButton);
-                    }
-
-                    // Add the event to the appropriate section based on its status
-                    if (data.status === "open") {
-                        searchResult.appendChild(li);
-                    } else if (data.status === "pending") {
-                        pendingReview.appendChild(li);
-                    } else if (data.status === "approved") {
-                        approved.appendChild(li);
-                    }
-                });
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
-            });
+function loadPage(direction = 0) {
+    var query = eventsRef.orderBy('createdAt').limit(pageSize);
+    if (currentPage) {
+        if (direction === 1) query = query.startAfter(currentPage);
+        if (direction === -1) query = query.endBefore(currentPage);
     }
+
+    query.get().then((snapshot) => {
+        if (snapshot.empty) {
+            console.log("No events found");
+            return;
+        }
+
+        isFirstPage = direction === 0 || (direction === -1 && snapshot.size < pageSize);
+        document.getElementById("previous_button").disabled = isFirstPage; // Disable or enable the "Previous" button
+
+        var searchResult = document.getElementById("search_result");
+        searchResult.innerHTML = ""; // Clear previous events
+
+        snapshot.forEach((doc) => {
+            var data = doc.data();
+            var li = document.createElement("li");
+            li.setAttribute("data-id", doc.id);
+
+            var golfClub = document.createElement("span");
+            golfClub.textContent = `Golf Club: ${data.golfClub}`;
+            li.appendChild(golfClub);
+            li.appendChild(document.createElement("br"));
+
+            var people = document.createElement("span");
+            people.textContent = `People: ${data.people}`;
+            li.appendChild(people);
+            li.appendChild(document.createElement("br"));
+
+            var creator = document.createElement("span");
+            creator.textContent = `Creator: ${data.userName}`;
+            li.appendChild(creator);
+            li.appendChild(document.createElement("br"));
+
+            // Only add the delete button if the current user is the creator of the event
+            if (data.userId === auth.currentUser.uid) {
+                var deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.classList.add("button-delete");
+                deleteButton.onclick = function () {
+                    db.collection("events").doc(doc.id).delete().then(() => {
+                        console.log("Event successfully deleted!");
+                        li.remove(); // Remove the event from the list
+                    }).catch((error) => {
+                        console.error("Error removing document: ", error);
+                    });
+                };
+                li.appendChild(deleteButton);
+            } else {
+                // The current user is not the creator of the event, add the signup button
+                var signupButton = document.createElement("button");
+                signupButton.textContent = "Sign Up";
+                signupButton.classList.add("button-signup");
+                signupButton.onclick = function () {
+                    signupForEvent(doc.id);
+                };
+                li.appendChild(signupButton);
+            }
+
+            searchResult.appendChild(li);
+        });
+
+        currentPage = snapshot.docs[snapshot.docs.length - 1];
+
+    }).catch((error) => {
+        console.log("Error getting documents: ", error);
+    });
 }
+
+function loadNextEvents() {
+    loadPage(1);
+}
+
+function loadPreviousEvents() {
+    loadPage(-1);
+}
+
+// Call loadPage initially to load the first page of events
+loadPage();
+
+
 
 
 function saveAndContinue(formId) {
     var form = document.getElementById(formId);
     if (form) {
         var name = document.getElementById("name_field").value;
+        var yearOfBirth = document.getElementById("year_of_birth_field").value;
+        var about = document.getElementById("about_field").value;
+        var englishFluency = document.getElementById("english_fluency_field").value;
+        var linkedIn = document.getElementById("linkedin_field").value;
+        var facebook = document.getElementById("facebook_field").value;
+        var golfAssociation = document.getElementById("golf_association_field").value;
+        var ghinNumber = document.getElementById("ghin_association_number_field").value;
+        var golfIndex = document.getElementById("golf_index_field").value;
+
+        // Basic validation
+        if (!name) {
+            console.error("Name is required!");
+            return;
+        }
+        // ... Add more validations for required fields if needed ...
+
         var user = auth.currentUser;
         if (user) {
             user.updateProfile({
                 displayName: name
             }).then(() => {
                 console.log("Display name set to: " + user.displayName);
-                // Save the name in Firestore
+                // Save the user data in Firestore
                 db.collection("users").doc(user.uid).set({
-                    name: name
-                    // Add here other fields from the form
+                    name: name,
+                    yearOfBirth: yearOfBirth,
+                    about: about,
+                    englishFluency: englishFluency,
+                    linkedIn: linkedIn,
+                    facebook: facebook,
+                    golfAssociation: golfAssociation,
+                    ghinNumber: ghinNumber,
+                    golfIndex: golfIndex
                 }).then(() => {
                     console.log("User data saved in Firestore.");
                 }).catch((error) => {
@@ -229,7 +282,11 @@ function saveAndContinue(formId) {
             }).catch((error) => {
                 console.error("Error setting display name: ", error);
             });
+        } else {
+            console.error("User is not authenticated.");
         }
+    } else {
+        console.error("Form not found!");
     }
 }
 
@@ -324,88 +381,81 @@ function signupForEvent(eventId) {
 
 
 
-function loadSignupsForReview() {
-    var reviewSignups = document.getElementById("review_signups");
-    var approved = document.getElementById("approved");
+async function loadSignupsForReview() {
+    const reviewSignups = document.getElementById("review_signups");
+    const approved = document.getElementById("approved");
 
-    // Check if the review_signups element exists
-    if (reviewSignups && approved) {
-        // Clear the previous signups
-        reviewSignups.innerHTML = "";
-        approved.innerHTML = "";
+    if (!reviewSignups || !approved) return; // Exit if elements don't exist
 
-        db.collection("signups")
-            .get()
-            .then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    var data = doc.data();
+    // Clear previous signups
+    reviewSignups.innerHTML = "";
+    approved.innerHTML = "";
 
-                    // Fetch the event document
-                    db.collection("events").doc(data.eventId).get()
-                        .then((eventDoc) => {
-                            if (eventDoc.exists) {
-                                var eventData = eventDoc.data();
+    try {
+        const signupsSnapshot = await db.collection("signups").get();
+        for (let doc of signupsSnapshot.docs) {
+            const signup = doc.data();
+            const eventDoc = await db.collection("events").doc(signup.eventId).get();
 
-                                // Only show the signup if the current user is the creator of the event
-                                if (eventData.userId === auth.currentUser.uid) {
-                                    var li = document.createElement("li");
-                                    li.setAttribute("data-id", doc.id); // Assign the document ID to the li element
+            if (!eventDoc.exists) {
+                console.log("No such event document!");
+                continue;
+            }
 
-                                    var eventName = document.createElement("span");
-                                    eventName.textContent = `Event Name: ${eventData.golfClub}`; // Use the event name here
-                                    li.appendChild(eventName);
-                                    li.appendChild(document.createElement("br"));
+            if (eventDoc.data().userId !== auth.currentUser.uid) continue; // Skip if the current user is not the creator
 
-                                    var userName = document.createElement("span");
-                                    userName.textContent = `User Name: ${data.userName}`; // Use the user's name here
-                                    li.appendChild(userName);
-                                    li.appendChild(document.createElement("br"));
-
-                                    var userEmail = document.createElement("span");
-                                    userEmail.textContent = `User Email: ${data.userEmail}`; // Use the user's email here
-                                    li.appendChild(userEmail);
-                                    li.appendChild(document.createElement("br"));
-
-                                    var status = document.createElement("span");
-                                    status.textContent = `Status: ${data.status}`;
-                                    li.appendChild(status);
-
-                                    if (data.status === "pending") {
-                                        var approveButton = document.createElement("button");
-                                        approveButton.textContent = "Approve";
-                                        approveButton.onclick = function () {
-                                            approveSignup(doc.id);
-                                        };
-                                        li.appendChild(approveButton);
-
-                                        var rejectButton = document.createElement("button");
-                                        rejectButton.textContent = "Reject";
-                                        rejectButton.onclick = function () {
-                                            rejectSignup(doc.id);
-                                        };
-                                        li.appendChild(rejectButton);
-
-                                        li.style.marginBottom = "10px"; // Add some space between the signups
-                                        reviewSignups.appendChild(li);
-                                    } else if (data.status === "approved") {
-                                        li.style.marginBottom = "10px"; // Add some space between the signups
-                                        approved.appendChild(li);
-                                    }
-                                }
-                            } else {
-                                console.log("No such document!");
-                            }
-                        })
-                        .catch((error) => {
-                            console.log("Error getting document:", error);
-                        });
-                });
-            })
-            .catch((error) => {
-                console.log("Error getting documents: ", error);
-            });
+            const listItem = createSignupListItem(doc, signup, eventDoc.data());
+            if (signup.status === "pending") {
+                reviewSignups.appendChild(listItem);
+            } else if (signup.status === "approved") {
+                approved.appendChild(listItem);
+            }
+        }
+    } catch (error) {
+        console.log("Error processing signups:", error);
     }
 }
+
+function createSignupListItem(doc, signup, event) {
+    const li = document.createElement("li");
+    li.setAttribute("data-id", doc.id);
+
+    appendElementToParent(li, "span", `Event Name: ${event.golfClub}`);
+    appendElementToParent(li, "span", `User Name: ${signup.userName}`);
+    appendElementToParent(li, "span", `User Email: ${signup.userEmail}`);
+    appendElementToParent(li, "span", `Status: ${signup.status}`);
+
+    if (signup.status === "pending") {
+        const approveButton = document.createElement("button");
+        approveButton.textContent = "Approve";
+        approveButton.onclick = () => approveSignup(doc.id);
+        li.appendChild(approveButton);
+
+        const rejectButton = document.createElement("button");
+        rejectButton.textContent = "Reject";
+        rejectButton.onclick = () => rejectSignup(doc.id);
+        li.appendChild(rejectButton);
+
+        // Add the "View User Profile" button
+        const viewProfileButton = document.createElement("button");
+        viewProfileButton.textContent = "View User Profile";
+        viewProfileButton.onclick = () => viewUserProfile(signup.userId);
+        li.appendChild(viewProfileButton);
+    }
+
+    li.style.marginBottom = "10px"; // Add some space between the signups
+    return li;
+}
+
+
+function appendElementToParent(parent, elementType, textContent) {
+    const element = document.createElement(elementType);
+    element.textContent = textContent;
+    parent.appendChild(element);
+    parent.appendChild(document.createElement("br"));
+}
+
+
 
 
 
@@ -489,6 +539,141 @@ function loadUpcomingEvents() {
     }
 }
 
+function searchEvents() {
+    var titleField = document.getElementById("event_title_field");
+    var searchField = document.getElementById("search_field");
+    var dateField = document.getElementById("date_field");
+    var searchResult = document.getElementById("search_result");
+
+    if (titleField && searchField && dateField && searchResult) {
+        // Clear the previous events
+        searchResult.innerHTML = "";
+
+        var titleText = titleField.value.trim().toLowerCase();
+        var searchText = searchField.value.trim().toLowerCase();
+        var searchDate = dateField.value;
+
+        var eventsRef = db.collection("events");
+
+        if (titleText) {
+            eventsRef = eventsRef.where("title", "==", titleText);
+        }
+
+        if (searchText) {
+            eventsRef = eventsRef.where("golfClub", "==", searchText);
+        }
+
+        // Check if a valid date is entered
+        if (searchDate) {
+            var searchTimestamp = new Date(searchDate);
+
+            if (!isNaN(searchTimestamp)) {
+                searchTimestamp.setHours(0, 0, 0, 0);
+                var searchISODate = searchTimestamp.toISOString();
+                eventsRef = eventsRef.where("dateTime", ">=", searchISODate);
+            }
+        }
+
+        eventsRef.get()
+            .then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    var data = doc.data();
+
+                    if (
+                        data.golfClub.toLowerCase().includes(searchText) ||
+                        data.people.toString().includes(searchText) ||
+                        data.dateTime.includes(searchText)
+                    ) {
+                        var li = document.createElement("li");
+
+                        var golfClub = document.createElement("span");
+                        golfClub.textContent = `Golf Club: ${data.golfClub}`;
+                        li.appendChild(golfClub);
+                        li.appendChild(document.createElement("br"));
+
+                        var people = document.createElement("span");
+                        people.textContent = `People: ${data.people}`;
+                        li.appendChild(people);
+                        li.appendChild(document.createElement("br"));
+
+                        var dateTime = document.createElement("span");
+                        dateTime.textContent = `Date and Time: ${data.dateTime}`;
+                        li.appendChild(dateTime);
+                        li.appendChild(document.createElement("br"));
+
+                        // Only add the delete button if the current user is the creator of the event
+                        if (data.userId === auth.currentUser.uid) {
+                            var deleteButton = document.createElement("button");
+                            deleteButton.textContent = "Delete";
+                            deleteButton.classList.add("button-delete");
+                            deleteButton.onclick = function () {
+                                db.collection("events").doc(doc.id).delete().then(() => {
+                                    console.log("Event successfully deleted!");
+                                    li.remove();
+                                }).catch((error) => {
+                                    console.error("Error removing document: ", error);
+                                });
+                            };
+                            li.appendChild(deleteButton);
+                        } else {
+                            // The current user is not the creator, add the signup button
+                            var signupButton = document.createElement("button");
+                            signupButton.textContent = "Sign Up";
+                            signupButton.classList.add("button-signup");
+                            signupButton.onclick = function () {
+                                signupForEvent(doc.id);
+                            };
+                            li.appendChild(signupButton);
+                        }
+
+                        searchResult.appendChild(li);
+                    }
+                });
+            })
+            .catch((error) => {
+                console.log("Error getting documents: ", error);
+            });
+    }
+}
+
+function viewUserProfile(userId) {
+    db.collection("users").doc(userId).get()
+        .then((doc) => {
+            if (doc.exists) {
+                var userData = doc.data();
+                // Update the following line to set the data inside the modal
+                document.getElementById('userProfileContent').innerHTML = `Name: ${userData.name}<br>Email: ${userData.email}<br>...`;
+                showUserProfile();
+            } else {
+                alert("No such user!");
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching user profile: ", error);
+        });
+}
+
+function showUserProfile() {
+    const modal = document.getElementById('userProfileModal');
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        console.error("Could not find user profile modal in the DOM.");
+    }
+    // You can populate the user's data here if needed
+    // e.g., document.getElementById('profileInfo').innerHTML = 'User Data';
+}
+
+
+function closeUserProfile() {
+    const modal = document.getElementById('userProfileModal');
+    if (modal) {
+        modal.style.display = 'none';
+    } else {
+        console.error("Could not find user profile modal in the DOM.");
+    }
+}
+
 let currentUserData = null; // Add this line at the top of your script
 
 
@@ -512,7 +697,7 @@ auth.onAuthStateChanged((user) => {
             });
 
         // Call all the necessary functions here
-        loadEvents();
+        loadPage(); // updated this line
         loadSignups(); // Load the signups when the user signs in
         loadSignupsForReview(); // Load the signups for review when the user signs in
         loadUpcomingEvents(); // Load the upcoming events when the user signs in
@@ -524,14 +709,67 @@ auth.onAuthStateChanged((user) => {
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    var loginForm = document.getElementById("loginForm");
+
+    // Safely set innerHTML of an element
+    function safelySetInnerHTML(elementId, content) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.innerHTML = content;
+        } else {
+            console.error(`Element with ID ${elementId} not found!`);
+        }
+    }
+
+    // Close user profile modal function
+    function closeUserProfile() {
+        const modal = document.getElementById('userProfileModal');
+        if (modal) {
+            modal.style.display = 'none';
+        } else {
+            console.error("Could not find user profile modal in the DOM.");
+        }
+    }
+
+    // Attach event listeners to all "View Profile" buttons
+    const viewProfileButtons = document.querySelectorAll('.viewProfileButton');
+    viewProfileButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const userId = this.getAttribute('data-userid');
+            if (userId) {
+                viewUserProfile(userId); // This function is from your app.js
+            } else {
+                console.error("User ID not found for View Profile button.");
+            }
+        });
+    });
+
+    closeUserProfile();  // Call the function here to hide the modal when the page loads
+
+    // Check and attach event listener for login form submission
+    const loginForm = document.getElementById("loginForm");
     if (loginForm) {
         loginForm.addEventListener("submit", function (event) {
             event.preventDefault(); // Prevent the form from being submitted normally
             login();
         });
     }
+
+    // Check and attach event listeners for pagination buttons
+    const previousButton = document.getElementById("previous_button");
+    const nextButton = document.getElementById("next_button");
+    if (previousButton) {
+        previousButton.addEventListener("click", loadPreviousEvents);
+    }
+    if (nextButton) {
+        nextButton.addEventListener("click", loadNextEvents);
+    }
+
+    // Attach event listener to close modal button
+    const closeModalButton = document.getElementById('closeUserProfileModal');
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', closeUserProfile);
+    }
+
+    // Example use of safelySetInnerHTML function
+    // safelySetInnerHTML("yourElementId", "Your new content");
 });
-
-
-
