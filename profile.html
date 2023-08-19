@@ -6,87 +6,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile Page</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        html {
-            scroll-behavior: smooth;
-        }
-
-        .profile-container {
-            background-color: rgba(255, 255, 255, 0.8);
-        }
-
-        .button-delete {
-            background-color: red;
-            color: white;
-            border-radius: 5px;
-            padding: 1px;
-            margin-top: 1px;
-        }
-
-        .button-signup {
-            background-color: blue;
-            color: white;
-            border-radius: 5px;
-            padding: 1px;
-            margin-top: 1px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
-
 <body class="bg-gray-100">
-    <header class="bg-white md:flex md:justify-between md:items-center fixed w-full z-50">
-        <div class="flex items-center justify-between p-2">
+    <header class="bg-white md:flex md:justify-between md:items-center p-2 fixed w-full z-50">
+        <div class="flex items-center justify-between">
             <div class="flex items-center">
                 <img src="https://i.postimg.cc/CLv3cFWw/Layered-One-Logov2.png" alt="LayeredOne Studio Logo"
                     class="w-10 md:w-16 mr-4">
                 <span class="text-gray-900 font-semibold text-xl">GolfBelly</span>
             </div>
-            <button onclick="logout()" class="md:hidden p-2 bg-red-500 text-white rounded-md">Logout</button>
+            <button onclick="logout()" class="md:hidden px-3 py-1 bg-red-500 text-white rounded-md">Logout</button>
         </div>
-        <nav id="nav"
-            class="hidden md:flex translate-x-full md:translate-x-0 text-gray-900 p-4 transition-transform duration-300">
-            <button onclick="logout()" class="ml-4 bg-red-500 text-white rounded-md px-4 py-2">Logout</button>
+        <nav id="nav" class="hidden md:flex text-gray-900 p-4">
+            <button onclick="logout()" class="ml-4 px-4 py-2 bg-red-500 text-white rounded-md">Logout</button>
         </nav>
     </header>
 
     <section id="profile_section" class="relative py-16 bg-cover bg-center"
         style="background-image: url('https://images.unsplash.com/photo-1538648759472-7251f7cb2c2f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3174&q=80'); background-size: cover; background-position: center;">
         <div class="bg-black bg-opacity-50 absolute inset-0"></div>
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative">
+        <div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative">
             <h3 class="text-2xl mb-4 font-semibold">Profile Page:</h3>
             <div id="profile_info" class="mb-4"></div>
             <button onclick="window.location.href='create-event.html'"
                 class="w-full px-3 py-2 mt-4 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500">Create
                 Event</button>
         </div>
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative mt-10">
+        <div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative mt-10">
             <h3 class="text-2xl mb-4 font-semibold">Your Upcoming Events:</h3>
             <ul id="upcoming_events" class="list-disc pl-5 mt-4"></ul>
         </div>
 
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative mt-10">
+        <<div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative mt-10">
             <h3 class="text-2xl mb-4 font-semibold">Review Signups:</h3>
-            <ul id="review_signups" class="list-disc pl-5 mt-4"></ul>
-        </div>
+            <ul id="review_signups" class="list-disc pl-5 mt-4">
+                <!-- This is just a sample list item for illustration purposes. -->
+                <li>User John Doe <button class="viewProfileButton button" data-userid="USER_ID_HERE">View
+                        Profile</button></li>
+                <!-- More list items can be added similarly. -->
+            </ul>
+            </div>
 
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative mt-10">
-            <h3 class="text-2xl mb-4 font-semibold">Events:</h3>
-            <ul id="search_result" class="list-disc pl-5 mt-4"></ul>
-            <button onclick="nextPage()"
-                class="w-full px-3 py-2 mt-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Next
-                Page</button>
-        </div>
 
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative mt-10">
-            <h3 class="text-2xl mb-4 font-semibold">Pending Review:</h3>
-            <ul id="pending_review" class="list-disc pl-5 mt-4"></ul>
-        </div>
+            <div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative mt-10">
+                <h3 class="text-2xl mb-4 font-semibold">Events:</h3>
+                <input type="date" id="date_field"
+                    class="w-full px-3 py-2 mb-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="searchEvents()"
+                    class="w-full px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Search</button>
+                <button id="previous_button" onclick="loadPreviousEvents()">Previous</button>
+                <button onclick="loadNextEvents()">Next</button>
+                <ul id="search_result" class="list-disc pl-5 mt-4"></ul>
+            </div>
 
-        <div class="container mx-auto px-6 py-12 profile-container rounded shadow-xl max-w-2xl relative mt-10">
-            <h3 class="text-2xl mb-4 font-semibold">Approved:</h3>
-            <ul id="approved" class="list-disc pl-5 mt-4"></ul>
-        </div>
+            <div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative mt-10">
+                <h3 class="text-2xl mb-4 font-semibold">Pending Review:</h3>
+                <ul id="pending_review" class="list-disc pl-5 mt-4"></ul>
+            </div>
+
+            <div class="container mx-auto px-6 py-12 bg-white bg-opacity-80 rounded shadow-xl max-w-2xl relative mt-10">
+                <h3 class="text-2xl mb-4 font-semibold">Approved:</h3>
+                <ul id="approved" class="list-disc pl-5 mt-4"></ul>
+            </div>
+            <div id="userProfileModal" class="fixed inset-0 hidden flex items-center justify-center z-50">
+                <!-- Modal Background -->
+                <div class="absolute inset-0 bg-black opacity-50"></div>
+
+                <!-- Modal Content -->
+                <div class="bg-white rounded-lg w-1/2 max-w-xl">
+                    <div class="flex justify-between items-center p-6">
+                        <h2 class="text-2xl font-bold" id="modalTitle">User Profile</h2>
+                        <button id="closeUserProfileModal" class="text-red-500 hover:text-red-700"
+                            aria-label="Close modal">&times;</button>
+                    </div>
+                    <div id="userProfileContent" class="p-6" role="dialog" aria-modal="true"
+                        aria-labelledby="modalTitle">
+                        <!-- User data will be populated here -->
+                    </div>
+                </div>
+            </div>
+
     </section>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -94,9 +95,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="app.js"></script>
-    <script>
-        // Your existing JavaScript code...
-    </script>
 </body>
 
 </html>
