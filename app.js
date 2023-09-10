@@ -21,12 +21,13 @@ var isFirstPage = true; // Start on the first page
 
 var firstDocOfCurrentPage = null; // Declare the variable here
 
-auth.onAuthStateChanged((user) => {
-    if (!user && !window.location.href.endsWith('login.html')) {
-        // User is not signed in and the current page is not the login page, redirect to the login page
-        window.location.href = "login.html";
-    }
-});
+setTimeout(() => {
+    auth.onAuthStateChanged((user) => {
+        if (!user && !window.location.href.endsWith('login.html')) {
+            window.location.href = "login.html";
+        }
+    });
+}, 2000); // 2-second delay
 
 function signup() {
     var email = document.getElementById("email_field_signup").value;
