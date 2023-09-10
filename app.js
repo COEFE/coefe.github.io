@@ -14,9 +14,16 @@ var app = firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 var db = firebase.firestore();
 
+// Set authentication persistence
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .catch((error) => {
+        console.error("Error setting auth persistence:", error);
+    });
+
 var eventsRef = db.collection("events");
 var first = eventsRef.orderBy("golfClub").limit(10);
 var isFirstPage = true; // Start on the first page
+
 
 
 var firstDocOfCurrentPage = null; // Declare the variable here
